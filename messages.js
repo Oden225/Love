@@ -41,7 +41,7 @@ const MESSAGES = [
   { id: 22, categorie: "Drôle", texte: "Tu veux un compliment ? Tu es intelligente, drôle, courageuse, et tu sens bon. Fin de la liste, je n'ai plus de place." },
   { id: 23, categorie: "Promesse", texte: "Je te promets de te faire rire au moins une fois par jour. Aujourd'hui, c'est fait." },
   { id: 24, categorie: "Tendre", texte: "Tu me rends meilleur, et aucune formation au monde ne m'a appris à le faire." },
-  { id: 25, categorie: "Souvenir", texte: "[À PERSONNALISER : le jour où je t'ai vue pour la première fois]. Tu avais déjà gagné avant même de le savoir." },
+  { id: 25, categorie: "Souvenir", texte: "La première fois que je t'ai vue, tu as souri, et mon cœur a fait un truc pas très médical. Tu avais déjà gagné avant même de le savoir." },
   { id: 26, categorie: "Tendre", texte: "Quand ton nom s'affiche sur mon téléphone, mon visage sourit sans me demander la permission.", photo: "photos/photo2.jpg" },
   { id: 27, categorie: "Tendre", texte: "Quand tu dis « on rentre », j'entends « chez nous ». Et c'est ma phrase préférée." },
   { id: 28, categorie: "Défi", texte: "Ce soir, pas de dossier, pas de téléphone pro. Rien que toi, moi et un grand sourire." },
@@ -54,7 +54,7 @@ const LETTRE_FINALE = `Sandra, ma doubehi, ma petite, ma femme, Mme Balet,
 
 Si tu lis ceci, c'est que tu as vidé tout le bocal. Chaque papier était vrai, même les blagues (surtout les blagues).
 
-Je ne sais pas écrire tout ce que tu représentes pour moi, alors j'ai fait un bocal. Mais retiens une chose : [À PERSONNALISER : une phrase à toi, qui vient du cœur].
+Je ne sais pas écrire tout ce que tu représentes pour moi, alors j'ai fait un bocal. Mais retiens une chose : si je devais tout recommencer, je te chercherais plus tôt, pour t'aimer plus longtemps.
 
 Merci d'être toi. Merci d'être là. Je t'aime aujourd'hui, demain, et bien après la fin du bocal.`;
 
