@@ -3,7 +3,7 @@
  * la dernière version du site (nouveaux mots, photos…). Sinon, on sert la copie gardée.
  * Pas besoin de changer VERSION pour ajouter des mots ; seulement pour tout vider (rare).
  */
-const VERSION = 'bocal-v3';
+const VERSION = 'bocal-v4';
 
 const CORE = [
   './',
@@ -18,6 +18,8 @@ const CORE = [
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
 ];
+// Photos gardées dès l'installation (si l'une manque, l'installation continue).
+const PHOTOS = ['./photos/photo1.jpg', './photos/photo2.jpg', './photos/photo3.jpg', './photos/photo4.jpg'];
 const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap';
 const NETWORK_TIMEOUT = 4000;
 
@@ -25,6 +27,9 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(VERSION);
     await cache.addAll(CORE.map((u) => new Request(u, { cache: 'reload' })));
+    await Promise.all(PHOTOS.map(async (u) => {
+      try { const r = await fetch(u); if (r.ok) await cache.put(u, r); } catch (e) { /* absente */ }
+    }));
     try { const r = await fetch(FONTS_CSS); if (r.ok) await cache.put(FONTS_CSS, r); } catch (e) { /* hors ligne */ }
     await self.skipWaiting();
   })());

@@ -370,7 +370,7 @@ img { -webkit-touch-callout: none; -webkit-user-drag: none; }
   transform: rotate(-2.5deg);
   box-shadow: 0 8px 18px -8px rgba(30, 18, 10, .5);
 }
-.polaroid img { display: block; width: 100%; aspect-ratio: 4 / 5; max-height: 36dvh; object-fit: cover; background: #eee; }
+.polaroid img { display: block; width: 100%; aspect-ratio: 4 / 5; max-height: 36dvh; object-fit: cover; object-position: 50% 25%; background: #eee; }
 .polaroid::before {
   content: "";
   position: absolute;
