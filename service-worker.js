@@ -1,5 +1,9 @@
-// Changer VERSION à chaque modification (messages, photos…) pour que le téléphone se mette à jour.
-const VERSION = 'bocal-v2';
+/*
+ * Mises à jour automatiques : quand le téléphone est en ligne, on prend toujours
+ * la dernière version du site (nouveaux mots, photos…). Sinon, on sert la copie gardée.
+ * Pas besoin de changer VERSION pour ajouter des mots ; seulement pour tout vider (rare).
+ */
+const VERSION = 'bocal-v3';
 
 const CORE = [
   './',
@@ -12,26 +16,16 @@ const CORE = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon.png',
 ];
-// Facultatif : si une photo manque, l'installation continue quand même.
-const OPTIONAL = [
-  './photos/photo1.jpg',
-  './photos/photo2.jpg',
-  './photos/photo3.jpg',
-  './photos/photo4.jpg',
-  'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap',
-];
+const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap';
+const NETWORK_TIMEOUT = 4000;
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(VERSION);
-    await cache.addAll(CORE);
-    await Promise.all(OPTIONAL.map(async (url) => {
-      try {
-        const res = await fetch(url);
-        if (res.ok) await cache.put(url, res);
-      } catch (e) { /* absent ou hors ligne */ }
-    }));
+    await cache.addAll(CORE.map((u) => new Request(u, { cache: 'reload' })));
+    try { const r = await fetch(FONTS_CSS); if (r.ok) await cache.put(FONTS_CSS, r); } catch (e) { /* hors ligne */ }
     await self.skipWaiting();
   })());
 });
@@ -44,27 +38,47 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
-// Réponse immédiate depuis le cache, mise à jour en arrière-plan.
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (url.origin !== self.location.origin && !isFont) return;
 
+  // Polices : elles ne changent jamais, la copie gardée suffit.
+  if (isFont) {
+    event.respondWith((async () => {
+      const cache = await caches.open(VERSION);
+      const hit = await cache.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
+      return res;
+    })());
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
+
+  // Le site : réseau d'abord (toujours la dernière version), copie gardée si hors ligne.
   event.respondWith((async () => {
     const cache = await caches.open(VERSION);
-    const key = req.mode === 'navigate' ? './index.html' : req;
-    const cached = await cache.match(key, { ignoreSearch: req.mode === 'navigate' });
-    const network = fetch(req).then((res) => {
-      if (res && (res.ok || res.type === 'opaque')) cache.put(key, res.clone());
-      return res;
-    }).catch(() => null);
-    if (cached) {
-      event.waitUntil(network);
-      return cached;
+    const isPage = req.mode === 'navigate';
+    const key = isPage ? './index.html' : url.pathname + url.search;
+    try {
+      const res = await withTimeout(fetch(url.href, { cache: 'no-cache', credentials: 'same-origin' }), NETWORK_TIMEOUT);
+      if (res.ok) await cache.put(isPage ? './index.html' : req, res.clone());
+      if (res.ok || !isPage) return res;
+      throw new Error('page indisponible');
+    } catch (e) {
+      const hit = await cache.match(isPage ? './index.html' : req, { ignoreSearch: isPage }) || await cache.match(key);
+      if (hit) return hit;
+      return new Response('Hors ligne', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
-    const res = await network;
-    return res || new Response('Hors ligne', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   })());
 });

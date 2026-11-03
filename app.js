@@ -9,7 +9,7 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const $ = (s) => document.querySelector(s);
 
-  const DEFAULTS = { unlocked: false, nom: null, opened: [], favoris: [], lettreLue: false, son: true, lastVisit: null };
+  const DEFAULTS = { unlocked: false, nom: null, opened: [], favoris: [], lettreLue: false, son: true, lastVisit: null, connus: null };
 
   function load() {
     try {
@@ -35,6 +35,11 @@
 
   const state = load();
   const previousVisit = state.lastVisit;
+
+  // Nouveaux mots ajoutés depuis la dernière visite ?
+  const allIds = MESSAGES.map((m) => m.id);
+  const newWords = Array.isArray(state.connus) ? allIds.filter((id) => !state.connus.includes(id)).length : 0;
+  state.connus = allIds;
   state.lastVisit = Date.now();
   save();
 
@@ -185,13 +190,14 @@
   const jarEl = $('#jar');
   const papersEl = $('#jar-papers');
   const slots = [];
-  for (let i = 0; i < TOTAL; i++) {
+  const SLOTS = Math.min(TOTAL, 32); // au-delà, le bocal reste simplement « plein »
+  for (let i = 0; i < SLOTS; i++) {
     const el = document.createElement('span');
     const cols = 4;
     const row = Math.floor(i / cols);
     const col = i % cols;
     const x = 4 + col * 23 + (seeded(i) - 0.5) * 7 + (row % 2 ? 3 : -2);
-    const y = 3 + row * (78 / Math.max(1, Math.ceil(TOTAL / cols))) + (seeded(i + 50) - 0.5) * 3;
+    const y = 3 + row * (78 / Math.max(1, Math.ceil(SLOTS / cols))) + (seeded(i + 50) - 0.5) * 3;
     const rot = (seeded(i + 100) - 0.5) * 70;
     el.className = 'paper-mini c-' + COLORS[Math.floor(seeded(i + 200) * COLORS.length)];
     el.style.left = x + '%';
@@ -232,6 +238,10 @@
   function greet() {
     const nom = displayName(state.nom);
     const away = previousVisit ? Date.now() - previousVisit : 0;
+    if (newWords > 0) {
+      $('#greeting').textContent = newWords === 1 ? `✨ Un nouveau mot pour toi, ${nom}` : `✨ ${newWords} nouveaux mots pour toi, ${nom}`;
+      return;
+    }
     $('#greeting').textContent = away > 12 * 3600 * 1000 ? `Te revoilà, ${nom} ♥` : `Coucou, ${nom} ♥`;
   }
 
@@ -293,7 +303,7 @@
         return;
       }
       const id = pickNext(rem);
-      const info = measure(slots[rem.length - 1]);
+      const info = measure(slots[Math.min(rem.length, SLOTS) - 1]);
       // Enregistré tout de suite : la progression survit même si l'app est fermée pendant l'animation.
       state.opened.push({ id, at: Date.now() });
       save();
@@ -522,7 +532,40 @@
     show('welcome');
   }
 
+  // Demande au téléphone de ne pas effacer la progression.
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* rien */ }
+
+  /* ---------- Mises à jour à distance ----------
+   * Sur iPhone, l'app installée reste souvent ouverte en arrière-plan : quand
+   * Sandra y revient, on regarde discrètement si messages.js a changé, et on
+   * recharge si c'est le cas (jamais pendant qu'un papier est ouvert). */
+  let swReg = null;
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').catch(() => {}); });
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').then((r) => { swReg = r; }).catch(() => {});
+    });
   }
+
+  const currentSig = JSON.stringify(MESSAGES) + '|' + LETTRE_FINALE;
+  let lastCheck = Date.now();
+
+  async function checkForNewWords() {
+    if (Date.now() - lastCheck < 60 * 1000 || !navigator.onLine) return;
+    lastCheck = Date.now();
+    try {
+      if (swReg) swReg.update().catch(() => {});
+      const res = await fetch('messages.js?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const code = await res.text();
+      const fresh = new Function(code + '\n;return { m: MESSAGES, l: LETTRE_FINALE };')();
+      if (JSON.stringify(fresh.m) + '|' + fresh.l === currentSig) return;
+      // On attend qu'aucun papier ne soit ouvert pour ne rien interrompre.
+      (function reloadWhenIdle() {
+        if (overlay.hidden && !busy) location.reload();
+        else setTimeout(reloadWhenIdle, 1000);
+      })();
+    } catch (e) { /* hors ligne ou fichier en cours d'envoi : on réessaiera */ }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForNewWords(); });
+  window.addEventListener('focus', checkForNewWords);
 })();
