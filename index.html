@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Le bocal de Sandra</title>
+  <meta name="description" content="Il y a des mots pour toi dedans.">
+  <meta name="theme-color" content="#fbf3e6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#2a1d16" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Le bocal">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+
+    <!-- Bienvenue : petit jeu « Dis-moi comment je t'appelle » -->
+    <section id="screen-welcome" class="screen screen-welcome" hidden>
+      <div class="welcome-inner">
+        <img class="welcome-icon" draggable="false" src="icons/icon.svg" alt="" width="96" height="96">
+        <h1 class="title">Le bocal de Sandra</h1>
+        <form id="welcome-form" class="welcome-form" autocomplete="off" novalidate>
+          <label for="welcome-input" class="welcome-label">Dis-moi comment je t'appelle</label>
+          <input id="welcome-input" class="field" type="text" name="surnom"
+                 autocomplete="off" autocapitalize="sentences" spellcheck="false"
+                 enterkeyhint="go" placeholder="Ton petit nom…">
+          <p id="welcome-error" class="welcome-error" aria-live="polite"></p>
+          <button type="submit" class="btn btn-primary">Entrer</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Accueil : le bocal -->
+    <section id="screen-home" class="screen screen-home" hidden>
+      <header class="topbar">
+        <button id="btn-sound" class="icon-btn" type="button" aria-pressed="true" aria-label="Son activé">
+          <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="btn-collection" class="pill-btn" type="button">
+          Mes mots <span id="collection-count" class="badge">0</span>
+        </button>
+      </header>
+
+      <div class="home-main">
+        <p id="greeting" class="greeting"></p>
+        <h1 class="title">Le bocal de Sandra</h1>
+        <p class="subtitle">Il y a des mots pour toi dedans.</p>
+
+        <div class="jar-stage">
+          <button id="jar" class="jar" type="button" aria-label="Tirer un mot du bocal">
+            <span class="jar-lid" aria-hidden="true"></span>
+            <span class="jar-ribbon" aria-hidden="true"></span>
+            <span class="jar-body" aria-hidden="true">
+              <span id="jar-papers" class="jar-papers"></span>
+              <span class="jar-shine"></span>
+              <span class="jar-shine jar-shine-2"></span>
+            </span>
+          </button>
+          <span class="shelf" aria-hidden="true"></span>
+        </div>
+
+        <p id="counter" class="counter" aria-live="polite"></p>
+        <button id="btn-draw" class="btn btn-primary btn-big" type="button">Ouvre-moi</button>
+      </div>
+    </section>
+
+    <!-- Collection : « Mes mots » -->
+    <section id="screen-collection" class="screen screen-collection" hidden>
+      <header class="topbar">
+        <button id="btn-back" class="pill-btn" type="button" aria-label="Retour au bocal">← Le bocal</button>
+      </header>
+      <h1 class="title title-small">Mes mots</h1>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" type="button" data-tab="tous" aria-selected="true">Tous <span id="tab-count-tous"></span></button>
+        <button class="tab" role="tab" type="button" data-tab="favoris" aria-selected="false">♥ Gardés <span id="tab-count-favoris"></span></button>
+      </div>
+      <div id="collection-list" class="collection-list"></div>
+      <footer class="collection-footer">
+        <button id="btn-reset" class="link-btn" type="button">Recommencer le bocal</button>
+      </footer>
+    </section>
+  </main>
+
+  <!-- Papier déplié (mot ou lettre) -->
+  <div id="overlay" class="overlay" hidden>
+    <div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
+  </div>
+
+  <div id="fx" class="fx" aria-hidden="true"></div>
+
+  <script src="messages.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
