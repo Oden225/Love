@@ -251,7 +251,77 @@
     return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: el.offsetWidth, h: el.offsetHeight, rot: parseFloat(el.dataset.rot || '-6'), cls: el.className.replace('paper-mini', '').trim() };
   }
 
-  async function fly(info) {
+  /* ---------- Mélange et paillettes ---------- */
+  const canAnimate = () => !reduceMotion.matches && !!Element.prototype.animate;
+
+  // Le bocal tangue et les papiers se mélangent avant le tirage.
+  function shuffleJar(duration = 620) {
+    if (!canAnimate()) return Promise.resolve();
+    jarEl.animate([
+      { transform: 'rotate(0deg)' },
+      { transform: 'rotate(-3deg)', offset: 0.2 },
+      { transform: 'rotate(2.5deg)', offset: 0.45 },
+      { transform: 'rotate(-1.5deg)', offset: 0.7 },
+      { transform: 'rotate(0deg)' },
+    ], { duration, easing: 'ease-in-out' });
+
+    const papers = slots.filter((el) => !el.hidden);
+    if (!goldEl.hidden) papers.push(goldEl);
+    return Promise.all(papers.map((el) => {
+      const rot = parseFloat(el.dataset.rot || '-6');
+      const z = el.style.zIndex || '1';
+      const frames = [{ transform: `translate(0%,0%) rotate(${rot}deg)`, zIndex: z }];
+      for (let k = 1; k <= 3; k++) {
+        const dx = (Math.random() - 0.5) * 70;          // en % de la largeur du papier
+        const dy = (Math.random() - 0.65) * 140;        // plutôt vers le haut : ça remue
+        const turn = rot + (Math.random() - 0.5) * 90;
+        frames.push({ transform: `translate(${dx}%,${dy}%) rotate(${turn}deg)`, zIndex: String(1 + randomInt(40)), offset: k / 4 });
+      }
+      frames.push({ transform: `translate(0%,0%) rotate(${rot}deg)`, zIndex: z });
+      return el.animate(frames, { duration, delay: Math.random() * 70, easing: 'ease-in-out' }).finished;
+    })).catch(() => {});
+  }
+
+  const SPARKLE_COLORS = ['#f2c75c', '#ffffff', '#f2b8b2', '#e0a54a', '#fff3c4', '#d98a84'];
+  function sparkleBurst(x, y, count = 14, spread = 70) {
+    if (!canAnimate()) return;
+    const fx = $('#fx');
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('i');
+      const size = 7 + Math.random() * 9;
+      s.className = 'sparkle';
+      Object.assign(s.style, { left: x - size / 2 + 'px', top: y - size / 2 + 'px', width: size + 'px', height: size + 'px', background: SPARKLE_COLORS[randomInt(SPARKLE_COLORS.length)] });
+      fx.appendChild(s);
+      const a = Math.random() * Math.PI * 2;
+      const d = spread * (0.4 + Math.random() * 0.6);
+      const dx = Math.cos(a) * d;
+      const dy = Math.sin(a) * d - 10;
+      s.animate([
+        { transform: 'translate(0,0) scale(.2) rotate(0deg)', opacity: 0 },
+        { transform: `translate(${dx * 0.6}px,${dy * 0.6}px) scale(1) rotate(90deg)`, opacity: 1, offset: 0.35 },
+        { transform: `translate(${dx}px,${dy + 16}px) scale(.3) rotate(180deg)`, opacity: 0 },
+      ], { duration: 650 + Math.random() * 450, delay: Math.random() * 80, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'forwards' })
+        .finished.then(() => s.remove());
+    }
+  }
+
+  // Petite traînée de paillettes derrière le papier qui vole.
+  function sparkleTrail(el, ms) {
+    if (!canAnimate()) return;
+    const end = performance.now() + ms;
+    let last = 0;
+    (function tick(t) {
+      if (t > end || !el.isConnected) return;
+      if (t - last > 40) {
+        last = t;
+        const r = el.getBoundingClientRect();
+        sparkleBurst(r.left + Math.random() * r.width, r.top + Math.random() * r.height, 1, 28);
+      }
+      requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  async function fly(info, { gold = false } = {}) {
     if (reduceMotion.matches || !info.w || !Element.prototype.animate) return null;
     const jarTop = jarEl.getBoundingClientRect().top;
     const clone = document.createElement('div');
@@ -267,15 +337,21 @@
       { transform: `translate(0,${up}px) rotate(0deg) scale(1.1)` },
     ], { duration: 520, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'forwards' }).finished;
 
+    // Le papier sort du bocal : une gerbe de paillettes.
+    const out = clone.getBoundingClientRect();
+    sparkleBurst(out.left + out.width / 2, out.top + out.height / 2, gold ? 26 : 16, gold ? 95 : 70);
+
     const dx = window.innerWidth / 2 - info.cx;
     const dy = window.innerHeight * 0.45 - info.cy;
     const scale = Math.min(4, (Math.min(window.innerWidth, 420) * 0.5) / info.w);
+    sparkleTrail(clone, 420);
     await clone.animate([
       { transform: `translate(0,${up}px) rotate(0deg) scale(1.1)` },
       { transform: `translate(${dx}px,${dy}px) rotate(-4deg) scale(${scale})` },
     ], { duration: 420, easing: 'cubic-bezier(.77,0,.175,1)', fill: 'forwards' }).finished;
 
     jarEl.classList.remove('is-open');
+    sparkleBurst(window.innerWidth / 2, window.innerHeight * 0.45, gold ? 22 : 12, gold ? 160 : 120);
     return clone;
   }
 
@@ -292,10 +368,10 @@
       audio(); // débloque le son pendant le geste
       const rem = remainingIds();
       if (rem.length === 0) {
-        const info = measure(goldEl);
         vibrate(30);
-        rustle();
-        const clone = await fly(info);
+        rustle(0.7, 0.22);
+        await shuffleJar();
+        const clone = await fly(measure(goldEl), { gold: true });
         const first = !state.lettreLue;
         openLetter({ fromJar: true });
         dropClone(clone);
@@ -303,13 +379,14 @@
         return;
       }
       const id = pickNext(rem);
-      const info = measure(slots[Math.min(rem.length, SLOTS) - 1]);
       // Enregistré tout de suite : la progression survit même si l'app est fermée pendant l'animation.
       state.opened.push({ id, at: Date.now() });
       save();
-      renderHome();
       vibrate(30);
-      rustle();
+      rustle(0.7, 0.22);
+      await shuffleJar();
+      const info = measure(slots[Math.min(rem.length, SLOTS) - 1]);
+      renderHome();
       const clone = await fly(info);
       openMessage(id, { fromJar: true });
       dropClone(clone);
