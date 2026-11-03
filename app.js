@@ -145,7 +145,13 @@
     for (const [k, el] of Object.entries(screens)) el.hidden = k !== name;
     current = name;
     if (name === 'home') renderHome();
-    if (name === 'collection') renderCollection();
+    if (name === 'collection') {
+      renderCollection();
+      // Petite cascade à l'ouverture seulement, pas à chaque mise à jour.
+      const list = $('#collection-list');
+      list.classList.remove('enter');
+      if (!reduceMotion.matches) { void list.offsetWidth; list.classList.add('enter'); setTimeout(() => list.classList.remove('enter'), 700); }
+    }
     window.scrollTo(0, 0);
   }
 
@@ -249,7 +255,7 @@
       { transform: `translate(0,0) rotate(${info.rot}deg)` },
       { transform: `translate(0,${up - 22}px) rotate(${info.rot * 0.3}deg) scale(1.15)`, offset: 0.7 },
       { transform: `translate(0,${up}px) rotate(0deg) scale(1.1)` },
-    ], { duration: 620, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'forwards' }).finished;
+    ], { duration: 520, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'forwards' }).finished;
 
     const dx = window.innerWidth / 2 - info.cx;
     const dy = window.innerHeight * 0.45 - info.cy;
@@ -257,7 +263,7 @@
     await clone.animate([
       { transform: `translate(0,${up}px) rotate(0deg) scale(1.1)` },
       { transform: `translate(${dx}px,${dy}px) rotate(-4deg) scale(${scale})` },
-    ], { duration: 480, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' }).finished;
+    ], { duration: 420, easing: 'cubic-bezier(.77,0,.175,1)', fill: 'forwards' }).finished;
 
     jarEl.classList.remove('is-open');
     return clone;
@@ -321,7 +327,7 @@
     if (overlay.hidden) return Promise.resolve();
     if (instant || reduceMotion.matches) { overlay.hidden = true; return Promise.resolve(); }
     overlay.classList.add('is-closing');
-    return wait(190).then(() => { overlay.hidden = true; overlay.classList.remove('is-closing'); });
+    return wait(160).then(() => { overlay.hidden = true; overlay.classList.remove('is-closing'); });
   }
 
   function closeOverlay() {
@@ -420,9 +426,9 @@
         <div class="mot-card-head"><span>✨ Le papier doré</span></div>
         <p class="mot-card-text">${esc(LETTRE_FINALE.split('\n')[0])}</p></button>`;
     }
-    html += items.map(({ id, n }) => {
+    html += items.map(({ id, n }, i) => {
       const m = byId.get(id);
-      return `<button class="mot-card c-${colorOf(id)}" type="button" data-id="${id}">
+      return `<button class="mot-card c-${colorOf(id)}" type="button" data-id="${id}" style="--i:${Math.min(i + 1, 8)}">
         <div class="mot-card-head"><span>Mot n° ${n} · ${esc(m.categorie)}</span>${isFav(id) ? '<span class="fav" aria-label="Gardé">♥</span>' : ''}</div>
         <p class="mot-card-text">${esc(m.texte)}</p></button>`;
     }).join('');

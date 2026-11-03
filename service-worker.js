@@ -1,5 +1,5 @@
 // Changer VERSION à chaque modification (messages, photos…) pour que le téléphone se mette à jour.
-const VERSION = 'bocal-v1';
+const VERSION = 'bocal-v2';
 
 const CORE = [
   './',

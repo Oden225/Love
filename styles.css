@@ -30,6 +30,9 @@
   --font-title: "Fraunces", Georgia, "Times New Roman", serif;
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
   color-scheme: light dark;
 }
 
@@ -54,7 +57,7 @@
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
 body {
   background:
     radial-gradient(120% 60% at 50% 0%, var(--bg-2), transparent 70%),
@@ -65,9 +68,9 @@ body {
   font-size: 16px;
   line-height: 1.45;
   overscroll-behavior: none;
-  -webkit-tap-highlight-color: transparent;
 }
-button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+img { -webkit-touch-callout: none; -webkit-user-drag: none; }
 [hidden] { display: none !important; }
 
 .screen {
@@ -105,9 +108,9 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   font-family: var(--font-title);
   font-weight: 500;
   font-size: 18px;
-  transition: transform .15s ease, box-shadow .15s ease, background-color .2s;
+  transition: transform 140ms var(--ease-out), background-color 140ms ease;
 }
-.btn:active { transform: scale(.97); }
+.btn:active, .icon-btn:active, .pill-btn:active, .tab:active, .link-btn:active { transform: scale(.97); }
 .btn-primary {
   background: var(--rose-deep);
   color: var(--rose-deep-ink);
@@ -122,6 +125,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--card) 70%, transparent);
   border-radius: 999px;
+  transition: transform 140ms var(--ease-out);
 }
 .icon-btn { width: 44px; padding: 0; display: grid; place-items: center; }
 .icon-btn svg { width: 22px; height: 22px; fill: currentColor; }
@@ -135,6 +139,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   font-size: 13px; font-weight: 700; display: inline-grid; place-items: center;
 }
 .link-btn {
+  transition: transform 140ms var(--ease-out);
   background: none; border: 0; padding: 12px; min-height: 44px;
   color: var(--ink-soft); font-size: 14px; text-decoration: underline; text-underline-offset: 3px;
 }
@@ -187,7 +192,9 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   border: 0;
   background: none;
   display: block;
+  transition: transform 160ms var(--ease-out);
 }
+.jar:active { transform: scale(.98); }
 .jar > span { position: absolute; display: block; }
 .jar-lid {
   z-index: 3;
@@ -287,8 +294,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   position: fixed;
   inset: 0;
   z-index: 50;
-  display: grid;
-  place-items: center;
+  display: flex;
   padding:
     calc(env(safe-area-inset-top) + 16px)
     calc(env(safe-area-inset-right) + 14px)
@@ -298,15 +304,17 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   overflow-y: auto;
-  animation: fade-in .25s ease both;
+  overscroll-behavior: contain;
+  animation: fade-in 220ms var(--ease-out) both;
 }
-.overlay.is-closing { animation: fade-out .2s ease both; }
+.overlay.is-closing { animation: fade-out 160ms ease both; }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 
 .sheet {
   position: relative;
   width: min(100%, 420px);
+  margin: auto; /* centré, mais une longue lettre reste lisible depuis le haut */
   padding: 22px 20px 18px;
   border-radius: 6px;
   color: var(--paper-ink);
@@ -317,14 +325,14 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   box-shadow: 0 24px 50px -18px rgba(30, 18, 10, .6), 0 2px 4px rgba(30, 18, 10, .15);
   transform-origin: 50% 50%;
 }
-.sheet.unfold { animation: unfold .7s cubic-bezier(.25, .9, .3, 1.05) both; }
-.sheet.unfold .sheet-content { animation: text-in .5s .35s ease both; }
+.sheet.unfold { animation: unfold 520ms var(--ease-out) both; }
+.sheet.unfold .sheet-content { animation: text-in 320ms 220ms var(--ease-out) both; }
 @keyframes unfold {
-  0%   { transform: perspective(900px) rotateX(78deg) scale(.45); opacity: 0; }
-  55%  { transform: perspective(900px) rotateX(-7deg) scale(1.02); opacity: 1; }
+  0%   { transform: perspective(900px) rotateX(70deg) scale(.6); opacity: 0; }
+  60%  { transform: perspective(900px) rotateX(-5deg) scale(1.01); opacity: 1; }
   100% { transform: none; opacity: 1; }
 }
-@keyframes text-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes text-in { from { opacity: 0; transform: translateY(6px); filter: blur(2px); } }
 
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
 .sheet-num { margin: 0; font-family: var(--font-title); font-size: 17px; font-weight: 700; }
@@ -376,7 +384,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
 .sheet-actions .btn { padding: 12px 10px; font-size: 17px; }
 .sheet-actions .btn-primary { grid-column: 1 / -1; }
-.heart-pop { animation: pop .35s ease; }
+.heart-pop { animation: pop 260ms var(--ease-out); }
 @keyframes pop { 50% { transform: scale(1.12); } }
 
 /* La lettre dorée */
@@ -401,6 +409,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   border-radius: 999px;
   background: transparent;
   font-size: 16px;
+  transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out);
 }
 .tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .collection-list { display: grid; gap: 12px; padding: 4px 2px; }
@@ -412,12 +421,14 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   border-radius: 5px;
   color: var(--paper-ink);
   box-shadow: 0 4px 10px -6px rgba(30, 18, 10, .45);
-  -webkit-user-select: auto; user-select: auto;
-  transition: transform .15s;
+  --tilt: .5deg;
+  transform: rotate(var(--tilt));
+  transition: transform 140ms var(--ease-out);
 }
-.mot-card:nth-child(odd) { transform: rotate(-.6deg); }
-.mot-card:nth-child(even) { transform: rotate(.5deg); }
-.mot-card:active { transform: scale(.98); }
+.mot-card:nth-child(odd) { --tilt: -.6deg; }
+.mot-card:active { transform: rotate(var(--tilt)) scale(.97); }
+.collection-list.enter .mot-card { animation: card-in 300ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 40ms); }
+@keyframes card-in { from { opacity: 0; translate: 0 8px; } }
 .mot-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
 .mot-card-text {
   margin: 0;
